@@ -60,7 +60,7 @@ def dfs(maze):
     stack.append(curr)
 
     #traverse maze and find token
-    while findInProgress and maxCounter < 250:
+    while findInProgress and maxCounter < 1000000:
         #pop stack and add current node to explored
         curr = stack.pop()
         explored[curr.node_xy] = curr
@@ -102,15 +102,63 @@ def dfs(maze):
 
 
 def bfs(maze):
-    #test queue
-    q = Queue(maxsize=0)
-    q.put(9)
-    q.put(3)
-    q.put(5)
-    print(list(q.queue))
-    q.get()
-    print(list(q.queue))
-    return [], 0
+    #data structures
+    queue = Queue(maxsize=0)
+    explored = dict()
+    path = []
+    neighbors = []
+    findInProgress = True
+    maxCounter = 0
+    obj = maze.getObjectives()
+
+    #initialize start/root node
+    curr = Node()
+    curr.node_xy = maze.getStart()
+    curr.parent_node = None
+    curr.children_nodes = []
+    curr.depth = 0
+    queue.put(curr)
+
+    #traverse maze and find token
+    while findInProgress and maxCounter < 1000000:
+        #pop stack and add current node to explored
+        curr = queue.get()
+        explored[curr.node_xy] = curr
+
+        #if node is goal, token found, exit loop
+        for goal in obj:
+            if curr.node_xy == goal:
+                findInProgress = False
+                break
+
+        #else get the neighbors for the current node
+        #if the neighbor is a valid move and has not been explored, add to stack
+        neighbors = maze.getNeighbors(curr.node_xy[0], curr.node_xy[1])
+        for potential_child_node in neighbors:
+            if maze.isValidMove(potential_child_node[0], potential_child_node[1]):
+                if potential_child_node in explored:
+                    continue
+                else:
+                    new_node = Node()
+                    new_node.node_xy = potential_child_node
+                    new_node.parent_node = curr
+                    new_node.children_nodes = []
+                    new_node.depth = curr.depth + 1
+                    curr.children_nodes.append(new_node)
+        
+        #add all children nodes to the stack
+        for stackNode in curr.children_nodes:
+            queue.put(stackNode)
+        #increment counter to prevent infinite looping
+        maxCounter += 1
+
+    #path has been found, so chart path starting from goal
+    while curr.node_xy != maze.getStart():
+        path.append(curr.node_xy)
+        curr = curr.parent_node
+    #reverse path to start from root node
+    path.reverse()
+    return path, len(explored)
 
 
 def greedy(maze):
