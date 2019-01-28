@@ -19,10 +19,10 @@ usage: mp1.py [-h] [--method {bfs,dfs,greedy,astar}] [--scale SCALE]
 
 Examples of how to run MP1:
 ```
-python mp1.py bigMaze.txt --method dfs
+python mp1.py ./maps/bigMaze.txt --method dfs
 ```
 ```
-python mp1.py tinySearch.txt --scale 30 --fps 10 --human
+python mp1.py ./maps/tinySearch.txt --scale 30 --fps 10 --human
 ```
 
 For help run:
