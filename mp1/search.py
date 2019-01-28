@@ -22,6 +22,8 @@ files and classes when code is run, so be careful to not modify anything else.
 # maze is a Maze object based on the maze from the file specified by input filename
 # searchMethod is the search method specified by --method flag (bfs,dfs,greedy,astar)
 
+from queue import *
+
 # Node data structure
 class Node:
 	node_xy = None
@@ -40,13 +42,16 @@ def search(maze, searchMethod):
 
 
 def dfs(maze):
+    #data structures
     stack = []
-    explored = []
+    explored = dict()
     path = []
     neighbors = []
     findInProgress = True
+    maxCounter = 0
     obj = maze.getObjectives()
 
+    #initialize start/root node
     curr = Node()
     curr.node_xy = maze.getStart()
     curr.parent_node = None
@@ -54,44 +59,57 @@ def dfs(maze):
     curr.depth = 0
     stack.append(curr)
 
-    #find token
-    while findInProgress:
+    #traverse maze and find token
+    while findInProgress and maxCounter < 250:
+        #pop stack and add current node to explored
         curr = stack.pop()
-        explored.append(curr)
+        explored[curr.node_xy] = curr
 
+        #if node is goal, token found, exit loop
         for goal in obj:
             if curr.node_xy == goal:
                 findInProgress = False
                 break
 
+        #else get the neighbors for the current node
+        #if the neighbor is a valid move and has not been explored, add to stack
         neighbors = maze.getNeighbors(curr.node_xy[0], curr.node_xy[1])
         for potential_child_node in neighbors:
             if maze.isValidMove(potential_child_node[0], potential_child_node[1]):
-                new_node = Node()
-                new_node.node_xy = potential_child_node
-                new_node.parent_node = curr
-                new_node.children_nodes = []
-                new_node.depth = curr.depth + 1
-                if new_node in explored:
+                if potential_child_node in explored:
                     continue
                 else:
+                    new_node = Node()
+                    new_node.node_xy = potential_child_node
+                    new_node.parent_node = curr
+                    new_node.children_nodes = []
+                    new_node.depth = curr.depth + 1
                     curr.children_nodes.append(new_node)
+        
+        #add all children nodes to the stack
         for stackNode in curr.children_nodes:
             stack.append(stackNode)
+        #increment counter to prevent infinite looping
+        maxCounter += 1
 
-    #set path
+    #path has been found, so chart path starting from goal
     while curr.node_xy != maze.getStart():
         path.append(curr.node_xy)
         curr = curr.parent_node
-    #reverse path
+    #reverse path to start from root node
     path.reverse()
     return path, len(explored)
 
 
-
 def bfs(maze):
-    # TODO: Write your code here
-    # return path, num_states_explored
+    #test queue
+    q = Queue(maxsize=0)
+    q.put(9)
+    q.put(3)
+    q.put(5)
+    print(list(q.queue))
+    q.get()
+    print(list(q.queue))
     return [], 0
 
 
