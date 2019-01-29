@@ -22,7 +22,15 @@ files and classes when code is run, so be careful to not modify anything else.
 # maze is a Maze object based on the maze from the file specified by input filename
 # searchMethod is the search method specified by --method flag (bfs,dfs,greedy,astar)
 
-from queue import *
+from queue import Queue
+from collections import deque
+from dataclasses import dataclass, field
+from typing import Any
+
+@dataclass(order=True)
+class PrioritizedItem:
+    priority: int
+    item: Any=field(compare=False)
 
 # Node data structure
 class Node:
@@ -119,9 +127,9 @@ def bfs(maze):
     curr.depth = 0
     queue.put(curr)
 
-    #traverse maze and find token
+    #traverse maze and find token, maxCounter number of loops to prevent infinite search
     while findInProgress and maxCounter < 1000000:
-        #pop stack and add current node to explored
+        #pop queue and add current node to explored
         curr = queue.get()
         explored[curr.node_xy] = curr
 
@@ -132,7 +140,7 @@ def bfs(maze):
                 break
 
         #else get the neighbors for the current node
-        #if the neighbor is a valid move and has not been explored, add to stack
+        #if the neighbor is a valid move and has not been explored, add to queue
         neighbors = maze.getNeighbors(curr.node_xy[0], curr.node_xy[1])
         for potential_child_node in neighbors:
             if maze.isValidMove(potential_child_node[0], potential_child_node[1]):
@@ -146,9 +154,9 @@ def bfs(maze):
                     new_node.depth = curr.depth + 1
                     curr.children_nodes.append(new_node)
         
-        #add all children nodes to the stack
-        for stackNode in curr.children_nodes:
-            queue.put(stackNode)
+        #add all children nodes to the queue
+        for queueNode in curr.children_nodes:
+            queue.put(queueNode)
         #increment counter to prevent infinite looping
         maxCounter += 1
 
@@ -162,12 +170,85 @@ def bfs(maze):
 
 
 def greedy(maze):
-    # TODO: Write your code here
-    # return path, num_states_explored
-    return [], 0
+    #data structures
+    queue = deque([])
+    explored = dict()
+    path = []
+    neighbors = []
+    findInProgress = True
+    maxCounter = 0
+    obj = maze.getObjectives()
+    goalList = []
+    currGoal = None
+    distance = 0
+    nodeTuple = None
+
+    #initialize start/root node
+    curr = Node()
+    curr.node_xy = maze.getStart()
+    curr.parent_node = None
+    curr.children_nodes = []
+    curr.depth = 0
+    queue.append(PrioritizedItem(0,curr))
+
+    #traverse maze and find token, maxCounter number of loops to prevent infinite search
+    while findInProgress and maxCounter < 1000000:
+        #pop queue and add current node to explored
+        curr = queue.popleft().item
+        explored[curr.node_xy] = curr
+
+        #Sort Goals by their distance to the current location
+        #if node is goal, token found, exit loop
+        for goal in obj:
+            distance = abs(curr.node_xy[0]-goal[0]) + abs(curr.node_xy[1]-goal[1])
+            goalList.append( PrioritizedItem(distance, goal) )
+            if curr.node_xy == goal:
+                findInProgress = False
+                break
+        goalList = sorted(goalList)
+        currGoal = goalList[0].item
+        goalList = []
+
+        #else get the neighbors for the current node
+        #if the neighbor is a valid move and has not been explored, add to queue
+        neighbors = maze.getNeighbors(curr.node_xy[0], curr.node_xy[1])
+        for potential_child_node in neighbors:
+            if maze.isValidMove(potential_child_node[0], potential_child_node[1]):
+                if potential_child_node in explored:
+                    continue
+                else:
+                    new_node = Node()
+                    new_node.node_xy = potential_child_node
+                    new_node.parent_node = curr
+                    new_node.children_nodes = []
+                    new_node.depth = curr.depth + 1
+
+                    distance = abs(potential_child_node[0]-currGoal[0]) + abs(potential_child_node[1]-currGoal[1])
+                    nodeTuple = PrioritizedItem(distance, new_node)
+                    curr.children_nodes.append( nodeTuple )
+        
+        #add all children nodes to the queue
+        curr.children_nodes = sorted(curr.children_nodes)
+        for queueNode in curr.children_nodes:
+            queue.append(queueNode)
+        temp = list(queue)
+        temp = sorted(temp)
+        queue = deque(temp)
+
+        #increment counter to prevent infinite looping
+        maxCounter += 1
+
+    #path has been found, so chart path starting from goal
+    while curr.node_xy != maze.getStart():
+        path.append(curr.node_xy)
+        curr = curr.parent_node
+    #reverse path to start from root node
+    path.reverse()
+    return path, len(explored)
 
 
 def astar(maze):
     # TODO: Write your code here
     # return path, num_states_explored
     return [], 0
+    
