@@ -26,6 +26,7 @@ from queue import Queue
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
+from math import sqrt
 
 @dataclass(order=True)
 class PrioritizedItem:
@@ -68,7 +69,7 @@ def dfs(maze):
     stack.append(curr)
 
     #traverse maze and find token
-    while findInProgress and maxCounter < 1000000:
+    while findInProgress and maxCounter < 100000:
         #pop stack and add current node to explored
         curr = stack.pop()
         explored[curr.node_xy] = curr
@@ -192,7 +193,7 @@ def greedy(maze):
     queue.append(PrioritizedItem(0,curr))
 
     #traverse maze and find token, maxCounter number of loops to prevent infinite search
-    while findInProgress and maxCounter < 1000000:
+    while findInProgress and maxCounter < 10000:
         #pop queue and add current node to explored
         curr = queue.popleft().item
         explored[curr.node_xy] = curr
@@ -246,9 +247,84 @@ def greedy(maze):
     path.reverse()
     return path, len(explored)
 
-
 def astar(maze):
-    # TODO: Write your code here
-    # return path, num_states_explored
-    return [], 0
-    
+    #**********SINGLE TOKEN ASTAR**********#
+
+    #data structures
+    queue = deque([])
+    explored = dict()
+    path = []
+    neighbors = []
+    findInProgress = True
+    maxCounter = 0
+    obj = maze.getObjectives()
+    start = maze.getStart()
+    goalList = []
+    currGoal = None
+    distance = 0
+    nodeTuple = None
+
+    #initialize start/root node
+    curr = Node()
+    curr.node_xy = maze.getStart()
+    curr.parent_node = None
+    curr.children_nodes = []
+    curr.depth = 0
+    queue.append(PrioritizedItem(0,curr))
+
+    #traverse maze and find token, maxCounter number of loops to prevent infinite search
+    while findInProgress and maxCounter < 10000:
+        #pop queue and add current node to explored
+        curr = queue.popleft().item
+        explored[curr.node_xy] = curr
+
+        #Sort Goals by their distance to the current location
+        #if node is goal, token found, exit loop
+        for goal in obj:
+            distance = abs(curr.node_xy[0]-goal[0]) + abs(curr.node_xy[1]-goal[1])
+            goalList.append( PrioritizedItem(distance, goal) )
+            if curr.node_xy == goal:
+                findInProgress = False
+                break
+        goalList = sorted(goalList)
+        currGoal = goalList[0].item
+        goalList = []
+
+        #else get the neighbors for the current node
+        #if the neighbor is a valid move and has not been explored, add to queue
+        neighbors = maze.getNeighbors(curr.node_xy[0], curr.node_xy[1])
+        for potential_child_node in neighbors:
+            if maze.isValidMove(potential_child_node[0], potential_child_node[1]):
+                if potential_child_node in explored:
+                    continue
+                else:
+                    new_node = Node()
+                    new_node.node_xy = potential_child_node
+                    new_node.parent_node = curr
+                    new_node.children_nodes = []
+                    new_node.depth = curr.depth + 1
+                    distance = sqrt(abs(potential_child_node[0]-currGoal[0])**2 + abs(potential_child_node[1]-currGoal[1])**2)
+                    distance += sqrt(abs(start[0]-potential_child_node[0])**2 + abs(start[1]-potential_child_node[1])**2)
+                    nodeTuple = PrioritizedItem(distance, new_node)
+                    curr.children_nodes.append( nodeTuple )
+        
+        #add all children nodes to the queue
+        for queueNode in curr.children_nodes:
+            queue.append(queueNode)
+        temp = list(queue)
+        temp = sorted(temp)
+        queue = deque(temp)
+
+        #increment counter to prevent infinite looping
+        maxCounter += 1
+
+    #path has been found, so chart path starting from goal
+    while curr.node_xy != maze.getStart():
+        path.append(curr.node_xy)
+        curr = curr.parent_node
+    #reverse path to start from root node
+    path.reverse()
+    return path, len(explored)
+
+
+# return path, num_states_explored
