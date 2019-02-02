@@ -247,7 +247,7 @@ def greedy(maze):
     path.reverse()
     return path, len(explored)
 
-def astar(maze):
+def astarS(maze):
     #**********SINGLE TOKEN ASTAR**********#
 
     #data structures
@@ -326,5 +326,191 @@ def astar(maze):
     path.reverse()
     return path, len(explored)
 
+# AStarNode data structure
+class AStarNode:
+	node_xy = None
+	parent_node = None
+	children_nodes = None
+	distance = None
+
+#*** Change function name to "astar" to test***#
+def astar(maze):
+    # *** MULTIPLE TOKENS *** #
+
+    # get start and objectives
+    curr = maze.getStart()
+    objectives = maze.getObjectives()
+    objectivesCount = len(objectives)
+    objectivesOrder = []
+    points = []
+    explored = []
+    smallestNode = None
+    smallestDistance = None
+    path = []
+    newPath = []
+    exploredSum = 0
+
+    points.append(curr)
+    for obj in objectives:
+        points.append(obj)
+
+    # find distance between start and all objectives in the maze
+    edges = dict()
+    pointsLength = len(points)
+    for i in range(0, pointsLength-1, 1):
+        for j in range(i+1, pointsLength, 1):
+            distance = astarDistance(maze, points[i], points[j])
+            edges[(points[i], points[j])] = distance
+            edges[(points[j], points[i])] = distance
+    
+    # use astar to find the shortest path between all tokens in the maze
+    # Nearest Neighbor Algorithm: https://en.wikipedia.org/wiki/Nearest_neighbour_algorithm
+    # Used to solve traveling salesman problems, in our case collecting all tokens problem
+    while len(objectivesOrder) < objectivesCount:
+        explored.append(curr)
+        # starting from "Start", find the objective not in the explored list with the smallest distance
+        # once found, add that objective to explored and to objectivesOrder
+        for obj in objectives:
+            if curr == obj:
+                continue
+            elif obj in explored:
+                continue
+            elif smallestNode == None:
+                smallestNode = obj
+                smallestDistance = edges[curr, obj]
+            elif edges[curr, obj] < smallestDistance:
+                smallestNode = obj
+                smallestDistance = edges[curr, obj]
+        
+        objectivesOrder.append((curr, smallestNode))
+        curr = smallestNode
+        smallestNode = None
+        smallestDistance = 0
+    
+    # print(objectivesOrder)
+    for nodePath in objectivesOrder:
+        newPath = astarPath(maze, nodePath[0], nodePath[1])
+        # print(newPath)
+        for everyPath in newPath[0]:
+            path.append(everyPath)
+        exploredSum += exploredSum + newPath[1]
+    print(path)
+    return path, exploredSum
+
+# Distance between points in maze
+def astarDistance(maze, start, end):
+    #data structures
+    queue = deque([])
+    explored = dict()
+    neighbors = []
+    findInProgress = True
+    nodeTuple = None
+
+    #initialize start/root node
+    curr = Node()
+    curr.node_xy = start
+    curr.parent_node = None
+    curr.children_nodes = []
+    curr.depth = 0
+    queue.append(PrioritizedItem(0,curr))
+
+    #traverse maze and find token, maxCounter number of loops to prevent infinite search
+    while findInProgress:
+        #pop queue and add current node to explored
+        curr = queue.popleft().item
+        explored[curr.node_xy] = curr
+
+        if curr.node_xy == end:
+            findInProgress = False
+            break
+
+        #else get the neighbors for the current node
+        #if the neighbor is a valid move and has not been explored, add to queue
+        neighbors = maze.getNeighbors(curr.node_xy[0], curr.node_xy[1])
+        for potential_child_node in neighbors:
+            if maze.isValidMove(potential_child_node[0], potential_child_node[1]):
+                if potential_child_node in explored:
+                    continue
+                else:
+                    new_node = Node()
+                    new_node.node_xy = potential_child_node
+                    new_node.parent_node = curr
+                    new_node.children_nodes = []
+                    new_node.depth = curr.depth + 1
+                    distance = sqrt(abs(potential_child_node[0]-end[0])**2 + abs(potential_child_node[1]-end[1])**2)
+                    distance += sqrt(abs(start[0]-potential_child_node[0])**2 + abs(start[1]-potential_child_node[1])**2)
+                    nodeTuple = PrioritizedItem(distance, new_node)
+                    curr.children_nodes.append( nodeTuple )
+        
+        #add all children nodes to the queue
+        for queueNode in curr.children_nodes:
+            queue.append(queueNode)
+        temp = list(queue)
+        temp = sorted(temp)
+        queue = deque(temp)
+
+    return curr.depth
+
+
+    # Path between points in maze
+def astarPath(maze, start, end):
+    #data structures
+    queue = deque([])
+    explored = dict()
+    neighbors = []
+    path = []
+    findInProgress = True
+    nodeTuple = None
+
+    #initialize start/root node
+    curr = Node()
+    curr.node_xy = start
+    curr.parent_node = None
+    curr.children_nodes = []
+    curr.depth = 0
+    queue.append(PrioritizedItem(0,curr))
+
+    #traverse maze and find token, maxCounter number of loops to prevent infinite search
+    while findInProgress:
+        #pop queue and add current node to explored
+        curr = queue.popleft().item
+        explored[curr.node_xy] = curr
+
+        if curr.node_xy == end:
+            findInProgress = False
+            break
+
+        #else get the neighbors for the current node
+        #if the neighbor is a valid move and has not been explored, add to queue
+        neighbors = maze.getNeighbors(curr.node_xy[0], curr.node_xy[1])
+        for potential_child_node in neighbors:
+            if maze.isValidMove(potential_child_node[0], potential_child_node[1]):
+                if potential_child_node in explored:
+                    continue
+                else:
+                    new_node = Node()
+                    new_node.node_xy = potential_child_node
+                    new_node.parent_node = curr
+                    new_node.children_nodes = []
+                    new_node.depth = curr.depth + 1
+                    distance = sqrt(abs(potential_child_node[0]-end[0])**2 + abs(potential_child_node[1]-end[1])**2)
+                    distance += sqrt(abs(start[0]-potential_child_node[0])**2 + abs(start[1]-potential_child_node[1])**2)
+                    nodeTuple = PrioritizedItem(distance, new_node)
+                    curr.children_nodes.append( nodeTuple )
+        
+        #add all children nodes to the queue
+        for queueNode in curr.children_nodes:
+            queue.append(queueNode)
+        temp = list(queue)
+        temp = sorted(temp)
+        queue = deque(temp)
+
+    #path has been found, so chart path starting from goal
+    while curr.node_xy != start:
+        path.append(curr.node_xy)
+        curr = curr.parent_node
+    #reverse path to start from root node
+    path.reverse()
+    return path, len(explored)
 
 # return path, num_states_explored
