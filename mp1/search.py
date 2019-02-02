@@ -387,14 +387,11 @@ def astar(maze):
         smallestNode = None
         smallestDistance = 0
     
-    # print(objectivesOrder)
     for nodePath in objectivesOrder:
         newPath = astarPath(maze, nodePath[0], nodePath[1])
-        # print(newPath)
         for everyPath in newPath[0]:
             path.append(everyPath)
         exploredSum += exploredSum + newPath[1]
-    print(path)
     return path, exploredSum
 
 # Distance between points in maze
