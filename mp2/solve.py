@@ -88,6 +88,8 @@ def removePent(pents, pent):
 
 import time
 solution = []
+inVal= None
+count = 0
 
 def removePentFromSolution(pent):
     global solution
@@ -100,12 +102,18 @@ def removePentFromSolution(pent):
 
 
 def boardSolve(board, pents):
+    global count
+    count += 1
     global solution
     tried = []
-    print(board)
+    
+    if (count%5000) == 0:
+        print(board)
  
     coor = find_next(board)
-    if coor == False and len(pents) == 0:
+    if len(pents) == 0 or coor == False:
+        print("DONE")
+        inVal = input("->")
         return True
     else:
         for pent in pents:
@@ -116,15 +124,20 @@ def boardSolve(board, pents):
                     add_pentomino(board, p, coor)
                     pents = removePent(pents, p)
                     solution.append((p, coor))
-                    time.sleep(0.5)
+
+                    # inVal = input("->")
 
                     if boardSolve(board, pents):
                         return True
-                    
-                    tried.remove((p.tolist(), coor))
+
+                    # print(board)
+                    # print(tried)
+                    # inVal = input("->")
+
                     remove_pentomino(board, get_pent_idx(p))
                     pents.append(p)
                     removePentFromSolution(p)
+
                 p = np.rot90(p)
             p = np.flip(p, 1)
             for rotate in range(0, 4):
@@ -133,15 +146,20 @@ def boardSolve(board, pents):
                     add_pentomino(board, p, coor)
                     pents = removePent(pents, p)
                     solution.append((p, coor))
-                    time.sleep(0.5)
+
+                    # inVal = input("->")
 
                     if boardSolve(board, pents):
                         return True
                     
-                    tried.remove((p.tolist(), coor))
+                    # print(board)
+                    # print(tried)
+                    # inVal = input("->")
+
                     remove_pentomino(board, get_pent_idx(p))
                     pents.append(p)
                     removePentFromSolution(p)
+
                 p = np.rot90(p)
 
     return False
