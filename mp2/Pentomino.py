@@ -102,9 +102,9 @@ if __name__ == "__main__":
     """
     # board = instances.board_6x10
     # pents = instances.dominos
-    board = instances.board_6x10
+    # board = instances.board_6x10
     # pents = instances.triominos
-    # board = instances.empty_chessboard
+    board = instances.empty_chessboard
     pents = instances.petnominos
     sol_list = solve(board, pents)
     if check_correctness(sol_list, board, pents):

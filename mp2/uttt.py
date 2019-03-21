@@ -23,7 +23,7 @@ class ultimateTicTacToe:
         self.globalIdx=[(0,0),(0,3),(0,6),(3,0),(3,3),(3,6),(6,0),(6,3),(6,6)]
 
         #Start local board index for reflex agent playing
-        self.startBoardIdx=4
+        self.startBoardIdx=8
         # self.startBoardIdx=randint(0,8)
 
         #utility value for reflex offensive and reflex defensive agents
@@ -97,6 +97,94 @@ class ultimateTicTacToe:
                     localMovesList.append((row,col))
         return localMovesList
 
+
+    def horizontalCount(self, y, x, isMax):
+        offense = self.maxPlayer
+        defense = self.minPlayer
+        tiar = 0
+        prevent = 0
+        for row in range(y, y+3):
+            oCount = 0
+            dCount = 0
+            nCount = 0
+            for col in range(x, x+3):
+                if self.board[row][col] == offense:
+                    oCount += 1
+                elif self.board[row][col] == defense:
+                    dCount += 1
+                else:
+                    nCount += 1
+            
+            if oCount == 2 and nCount == 1:
+                tiar += 1
+            if oCount == 1 and dCount == 2:
+                prevent += 1
+        return tiar, prevent
+
+    def verticalCount(self, y, x, isMax):
+        offense = self.maxPlayer
+        defense = self.minPlayer
+        tiar = 0
+        prevent = 0
+        for col in range(x, x+3):
+            oCount = 0
+            dCount = 0
+            nCount = 0
+            for row in range(y, y+3):
+                if self.board[row][col] == offense:
+                    oCount += 1
+                elif self.board[row][col] == defense:
+                    dCount += 1
+                else:
+                    nCount += 1
+            
+            if oCount == 2 and nCount == 1:
+                tiar += 1
+            if oCount == 1 and dCount == 2:
+                prevent += 1
+        return tiar, prevent
+
+    def diagonalCount(self, y, x, isMax):
+        offense = self.maxPlayer
+        defense = self.minPlayer
+        tiar = 0
+        prevent = 0
+
+        oCount = 0
+        dCount = 0
+        nCount = 0
+        for row in range(0, 3):
+            if self.board[y+row][x+row] == offense:
+                oCount += 1
+            elif self.board[y+row][x+row] == defense:
+                dCount += 1
+            else:
+                nCount += 1
+            
+        if oCount == 2 and nCount == 1:
+            tiar += 1
+        if oCount == 1 and dCount == 2:
+            prevent += 1
+    
+        oCount = 0
+        dCount = 0
+        nCount = 0
+        for row in range(0, 3):
+            if self.board[y+2-row][x+row] == offense:
+                oCount += 1
+            elif self.board[y+2-row][x+row] == defense:
+                dCount += 1
+            else:
+                nCount += 1
+            
+        if oCount == 2 and nCount == 1:
+            tiar += 1
+        if oCount == 1 and dCount == 2:
+            prevent += 1
+
+        return tiar, prevent
+
+
     def checkLocalWinner(self, currBoardIdx):
         localIdx = self.globalIdx[currBoardIdx]
         y = localIdx[0]
@@ -127,105 +215,27 @@ class ultimateTicTacToe:
 
 
     def countLocalTwoInARow(self, currBoardIdx, isMax):
-        offense = 'X' if isMax else 'O'
-        defense = 'O' if isMax else 'X'
         tiar = 0
         prevent = 0
-        startCoor = self.globalIdx[currBoardIdx]
-        cCoor = (startCoor[0]+1, startCoor[1]+1)
-        tCoor = (startCoor[0], startCoor[1]+1)
-        lCoor = (startCoor[0]+1, startCoor[1])
-        bCoor = (startCoor[0]+2, startCoor[1]+1)
-        rCoor = (startCoor[0]+1, startCoor[1]+2)
-
-
-        # Check middle squares of top, bottom, left, and right 
-        # top
-        if self.board[tCoor[0]][tCoor[1]] == offense:
-            if self.board[tCoor[0]][tCoor[1]-1] == offense and self.board[tCoor[0]][tCoor[1]+1] == '_':
-                tiar += 1
-            if self.board[tCoor[0]][tCoor[1]-1] == '_' and self.board[tCoor[0]][tCoor[1]+1] == offense:
-                tiar += 1
-            if self.board[tCoor[0]+1][tCoor[1]] == offense and self.board[tCoor[0]+2][tCoor[1]] == '_':
-                tiar += 1
-        if self.board[tCoor[0]][tCoor[1]] == defense:
-            if self.board[tCoor[0]][tCoor[1]-1] == defense and self.board[tCoor[0]][tCoor[1]+1] == offense:
-                prevent += 1
-            if self.board[tCoor[0]][tCoor[1]-1] == offense and self.board[tCoor[0]][tCoor[1]+1] == defense:
-                prevent += 1
-            if self.board[tCoor[0]+1][tCoor[1]] == defense and self.board[tCoor[0]+2][tCoor[1]] == offense:
-                prevent += 1
-        # bottom
-        if self.board[bCoor[0]][bCoor[1]] == offense:
-            if self.board[bCoor[0]][bCoor[1]-1] == offense and self.board[bCoor[0]][bCoor[1]+1] == '_':
-                tiar += 1
-            if self.board[bCoor[0]][bCoor[1]-1] == '_' and self.board[bCoor[0]][bCoor[1]+1] == offense:
-                tiar += 1
-            if self.board[bCoor[0]-1][bCoor[1]] == offense and self.board[bCoor[0]-2][bCoor[1]] == '_':
-                tiar += 1
-        if self.board[bCoor[0]][bCoor[1]] == defense:
-            if self.board[bCoor[0]][bCoor[1]-1] == defense and self.board[bCoor[0]][bCoor[1]+1] == offense:
-                prevent += 1
-            if self.board[bCoor[0]][bCoor[1]-1] == offense and self.board[bCoor[0]][bCoor[1]+1] == defense:
-                prevent += 1
-            if self.board[bCoor[0]-1][bCoor[1]] == defense and self.board[bCoor[0]-2][bCoor[1]] == offense:
-                prevent += 1
-        # left
-        if self.board[lCoor[0]][lCoor[1]] == offense:
-            if self.board[lCoor[0]-1][lCoor[1]] == offense and self.board[lCoor[0]+1][lCoor[1]] == '_':
-                tiar += 1
-            if self.board[lCoor[0]-1][lCoor[1]] == '_' and self.board[lCoor[0]+1][lCoor[1]] == offense:
-                tiar += 1
-            if self.board[lCoor[0]][lCoor[1]+1] == offense and self.board[lCoor[0]][lCoor[1]+2] == '_':
-                tiar += 1
-        if self.board[lCoor[0]][lCoor[1]] == defense:
-            if self.board[lCoor[0]-1][lCoor[1]] == defense and self.board[lCoor[0]+1][lCoor[1]] == offense:
-                prevent += 1
-            if self.board[lCoor[0]-1][lCoor[1]] == offense and self.board[lCoor[0]+1][lCoor[1]] == defense:
-                prevent += 1
-            if self.board[lCoor[0]][lCoor[1]+1] == defense and self.board[lCoor[0]][lCoor[1]+2] == offense:
-                prevent += 1
-        # right
-        if self.board[rCoor[0]][rCoor[1]] == offense:
-            if self.board[rCoor[0]-1][rCoor[1]] == offense and self.board[rCoor[0]+1][rCoor[1]] == '_':
-                tiar += 1
-            if self.board[rCoor[0]-1][rCoor[1]] == '_' and self.board[rCoor[0]+1][rCoor[1]] == offense:
-                tiar += 1
-            if self.board[rCoor[0]][rCoor[1]-1] == offense and self.board[rCoor[0]][rCoor[1]-2] == '_':
-                tiar += 1
-        if self.board[rCoor[0]][rCoor[1]] == defense:
-            if self.board[rCoor[0]-1][rCoor[1]] == defense and self.board[rCoor[0]+1][rCoor[1]] == offense:
-                prevent += 1
-            if self.board[rCoor[0]-1][rCoor[1]] == offense and self.board[rCoor[0]+1][rCoor[1]] == defense:
-                prevent += 1
-            if self.board[rCoor[0]][rCoor[1]-1] == defense and self.board[rCoor[0]][rCoor[1]-2] == offense:
-                prevent += 1
-
-
-        # diagonal
-        if self.board[cCoor[0]][cCoor[1]] == offense:
-            if self.board[cCoor[0]-1][cCoor[1]-1] == offense and self.board[cCoor[0]+1][cCoor[1]+1] == '_':
-                tiar += 1
-            if self.board[cCoor[0]-1][cCoor[1]-1] == '_' and self.board[cCoor[0]+1][cCoor[1]+1] == offense:
-                tiar += 1
-            if self.board[cCoor[0]+1][cCoor[1]-1] == offense and self.board[cCoor[0]-1][cCoor[1]+1] == '_':
-                tiar += 1
-            if self.board[cCoor[0]+1][cCoor[1]-1] == '_' and self.board[cCoor[0]-1][cCoor[1]+1] == offense:
-                tiar += 1
-        if self.board[cCoor[0]][cCoor[1]] == defense:
-            if self.board[cCoor[0]-1][cCoor[1]-1] == defense and self.board[cCoor[0]+1][cCoor[1]+1] == offense:
-                prevent += 1
-            if self.board[cCoor[0]-1][cCoor[1]-1] == offense and self.board[cCoor[0]+1][cCoor[1]+1] == defense:
-                prevent += 1
-            if self.board[cCoor[0]+1][cCoor[1]-1] == defense and self.board[cCoor[0]-1][cCoor[1]+1] == offense:
-                prevent += 1
-            if self.board[cCoor[0]+1][cCoor[1]-1] == offense and self.board[cCoor[0]-1][cCoor[1]+1] == defense:
-                prevent += 1
+        localIdx = self.globalIdx[currBoardIdx]
+        y = localIdx[0]
+        x = localIdx[1]
         
+        t, p = self.horizontalCount(y,x,isMax)
+        tiar += t
+        prevent += p
+        t, p = self.verticalCount(y,x,isMax)
+        tiar += t
+        prevent += p
+        t, p = self.diagonalCount(y,x,isMax)
+        tiar += t
+        prevent += p
         return tiar, prevent
 
+
+
     def countCorners(self, currBoardIdx, isMax):
-        symbol = 'X' if isMax else 'O'
+        symbol = self.maxPlayer
         coor = self.globalIdx[currBoardIdx]
         count = 0
         if self.board[coor[0]][coor[1]] == symbol:
@@ -264,15 +274,17 @@ class ultimateTicTacToe:
             else:    
                 score -= tiar*100
                 score -= prevent*500
-        if score != 0:
-            return score
-
-        for count in range(0,9):
-            corners = self.countCorners(count, isMax)
-            if isMax:
-                score += corners*30
-            else:
-                score -= corners*30
+        
+        if score == 0:
+            for count in range(0,9):
+                corners = self.countCorners(count, isMax)
+                if isMax:
+                    score += corners*30
+                else:
+                    score -= corners*30
+        
+        # self.printGameBoard()
+        # input(str(score) + "->")
         return score
 
 
@@ -357,32 +369,71 @@ class ultimateTicTacToe:
         allValues = []
 
         if depth >= self.maxDepth:
-            if self.checkLocalWinner(currBoardIdx) != 0:
-                return 10000 if self.checkLocalWinner(currBoardIdx) == 1 else -10000
+            winner = self.checkLocalWinner(currBoardIdx)
+            if isMax:
+                if winner == 1:
+                    return 10000
+                if winner == -1:
+                    return -10000
+            else:
+                if winner == 1:
+                    return -10000
+                if winner == -1:
+                    return 10000
             return self.evaluatePredifined(isMax)
 
         currValidMoves = self.getLocalMoves(currBoardIdx)
         if not currValidMoves:
-            if self.checkLocalWinner(currBoardIdx) != 0:
-                return 10000 if self.checkLocalWinner(currBoardIdx) == 1 else -10000
+            winner = self.checkLocalWinner(currBoardIdx)
+            if isMax:
+                if winner == 1:
+                    return 10000
+                if winner == -1:
+                    return -10000
+            else:
+                if winner == 1:
+                    return -10000
+                if winner == -1:
+                    return 10000
             return self.evaluatePredifined(isMax)
 
+        isMax = not isMax
         for validMove in currValidMoves:
             self.drawToBoard(validMove, isMax)
-            currValue = self.minimax(depth+1, self.getBoardIdx(validMove), not isMax)
+            currValue = self.minimax(depth+1, self.getBoardIdx(validMove), isMax)
             self.removeFromBoard(validMove)
             allValues.append(currValue)
 
-        return min(allValues)
+        isMax = not isMax
+        if isMax:
+            return max(allValues)
+        else:
+            return min(allValues)
 
     def playGamePredifinedAgent(self,maxFirst,isMinimax):
+        """
+        This function implements the processes of the game of predifined offensive agent vs defensive agent.
+        input args:
+        maxFirst(bool): boolean variable indicates whether maxPlayer or minPlayer plays first.
+                        True for maxPlayer plays first, and False for minPlayer plays first.
+        isMinimax(bool):boolean variable indicates whether it's using minimax or alpha-beta pruning algorithm.
+                        True is minimax and False is alpha-beta.
+        output:
+        bestMove(list of tuple): list of bestMove coordinates at each step
+        bestValue(list of float): list of bestValue at each move
+        expandedNodes(list of int): list of expanded nodes at each move
+        gameBoards(list of 2d lists): list of game board positions at each move
+        winner(int): 1 for maxPlayer is the winner, -1 for minPlayer is the winner, and 0 for tie.
+        """
         bestMove=[]
         bestValue=[]
         gameBoards=[]
         winner=0
         expandedNodes = []
         currBoardIdx = self.startBoardIdx
-        isMax = isMinimax
+        isMax = maxFirst
+        originalMax = self.maxPlayer
+        originalMin = self.minPlayer
         currBestMove = None
 
 
@@ -399,9 +450,10 @@ class ultimateTicTacToe:
             if isMinimax:
                 for validMove in currValidMoves:
                     self.drawToBoard(validMove,isMax)
-                    tryValue = self.minimax(1, self.getBoardIdx(validMove), not isMax)
+                    tryValue = self.minimax(1, self.getBoardIdx(validMove), isMax)
                     self.removeFromBoard(validMove)
-                    if tryValue >= currBestValue:
+                    
+                    if tryValue > currBestValue:
                         currBestMove = validMove
                         currBestValue = tryValue
             
@@ -411,120 +463,24 @@ class ultimateTicTacToe:
             gameBoards.append(self.board)
 
             if self.checkLocalWinner(currBoardIdx) != 0:
+                self.maxPlayer = originalMax
+                self.minPlayer = originalMin
                 winner = self.checkLocalWinner(currBoardIdx)
                 break
 
             currBoardIdx = self.getBoardIdx(currBestMove)
-            isMax = not isMax
+            
+            temp = self.maxPlayer
+            self.maxPlayer = self.minPlayer
+            self.minPlayer = temp
 
-            self.printGameBoard()
-            input(str(count) + "-->")
+            # self.printGameBoard()
+            # input(str(count) + "----->")
         
         self.printGameBoard()
         return gameBoards, bestMove, expandedNodes, bestValue, winner
 
 
-
-
-
-
-    def playGamePredifinedAgentOG(self,maxFirst,isMinimax):
-        """
-        This function implements the processes of the game of predifined offensive agent vs defensive agent.
-        input args:
-        maxFirst(bool): boolean variable indicates whether maxPlayer or minPlayer plays first.
-                        True for maxPlayer plays first, and False for minPlayer plays first.
-        isMinimax(bool):boolean variable indicates whether it's using minimax or alpha-beta pruning algorithm.
-                        True is minimax and False is alpha-beta.
-        output:
-        bestMove(list of tuple): list of bestMove coordinates at each step
-        bestValue(list of float): list of bestValue at each move
-        expandedNodes(list of int): list of expanded nodes at each move
-        gameBoards(list of 2d lists): list of game board positions at each move
-        winner(int): 1 for maxPlayer is the winner, -1 for minPlayer is the winner, and 0 for tie.
-        """
-        #YOUR CODE HERE
-        bestMove=[]
-        bestValue=[]
-        gameBoards=[]
-        winner=0
-
-        global expandedNodes
-
-        # Algorithm
-        # - Check if winner
-        #   - If true, set winner end game
-        #   - Else, continue
-        # - Check if local board has valid move 
-        #   - If so, get all possible moves for local board
-        #   - Else, all possible moves include all non-empty positions
-        #   - Else, if no non-empty positions, result is tie, break.
-        #       - DFS on all moves
-        #           - Check if offensive(max)/defensive(min), minimax or alphabeta
-        #           - While depth is less than 3, continue search
-        #           - For each expanded node, increment counter
-        #           - when reach max depth, evaluate move
-        # - Choose best move, push to list bestMove
-        # - Push best value to bestValue
-        # - Add move to board, push board to gameBoards
-        # - Push number of expanded nodes to expandedNodes, reset to 0
-        # - Change currBoardIdx to next board idx
-        # - Change player
-        #   - Print board
-        #   - use input to pause game
-
-        currBoardIdx = self.startBoardIdx
-        currValidMoves = []
-        currBestMove = None
-        currBestValue = None
-       
-        isMax = maxFirst
-
-        for count in range(0,81):
-            # 1. Check Winner
-            # if self.checkWinner() != 0:
-            #     break
-
-            # 2. Get Valid Moves
-            currValidMoves = self.getLocalMoves(currBoardIdx)
-            if not currValidMoves:
-                currValidMoves = self.getAllMoves()
-                if not currValidMoves:
-                    break
-
-            # 3. MiniMax/AlphaBeta
-            currBestMove = currValidMoves[0]
-            currBestValue = 0.0
-
-
-            if isMinimax:
-                for validMove in currValidMoves:
-                    
-                    tryValue = self.minimax(0, currBoardIdx, not isMax)
-                    if tryValue > currBestValue:
-                        currBestMove = validMove
-                        currBestValue = tryValue
-
-            # else:
-            #     for validMove in currValidMoves:
-            #         tryValue = self.alphabeta(0, currBoardIdx, 0, 0, isMax)
-            #         if tryValue > currBestValue:
-            #             currBestMove = validMove
-            #             currBestValue = tryValue
-            
-            bestMove.append(currBestMove)
-            bestValue.append(currBestValue)
-
-            # - Add move to board, push board to gameBoards
-            # - Push number of expanded nodes to expandedNodes, reset to 0
-            # - Change currBoardIdx to next board idx
-            
-            isMax = not isMax
-            self.printGameBoard()
-            input(str(count) + "-->")
-
-        self.printGameBoard()
-        return gameBoards, bestMove, expandedNodes, bestValue, winner
 
     def playGameYourAgent(self):
         """

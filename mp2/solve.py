@@ -1,13 +1,29 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
+
+def can_add_pentomino(board, pent, coord):
+    """
+    Adds a pentomino pent to the board. The pentomino will be placed such that
+    coord[0] is the lowest row index of the pent and coord[1] is the lowest
+    column index.
+    """
+    for row in range(len(pent)):
+        for col in range(len(pent[0])):
+            if pent[row][col] != 0:
+                if coord[0]+row >= board.shape[0] or coord[1]+col >= board.shape[1]:
+                    return False
+                if board[coord[0]+row][coord[1]+col] != 0:  # Overlap
+                    return False
+    return True
+
 def get_pent_idx(pent):
     """
     Returns the index of a pentomino.
     """
     pidx = 0
-    for i in range(len(pent)):
-        for j in range(len(pent[0])):
+    for i in range(pent.shape[0]):
+        for j in range(pent.shape[1]):
             if pent[i][j] != 0:
                 pidx = pent[i][j]
                 break
@@ -17,305 +33,115 @@ def get_pent_idx(pent):
         return -1
     return pidx - 1
 
+def sol_list(board,pents):
+    list = []
+    for p in pents:
+        idx = get_pent_idx(p)+1
+        board_copy = np.copy(board)
+        board_copy[board_copy ==idx] = 0
+        wow,loc = place(board_copy,p)
+        list.append((wow,loc))
+    return list
 
-def can_add_pentomino(board, pent, coord):
-    """
-    Adds a pentomino pent to the board. The pentomino will be placed such that
-    coord[0] is the lowest row index of the pent and coord[1] is the lowest 
-    column index. 
-    """
-    for row in range(len(pent)):
-        for col in range(len(pent[0])):
-            if pent[row][col] != 0:
-                if coord[0]+row >= board.shape[0] or coord[1]+col >= board.shape[1]:
-                    return False
-                if board[coord[0]+row][coord[1]+col] != 0:  # Overlap
-                    return False
-    return True
-
+def place(board,pent):
+    orient = allOrients(pent)
+    for i in range(board.shape[0]):
+        for j in range(board.shape[1]):
+            for z in orient:
+                if(can_add_pentomino(board,z,(i,j))):
+                    add_pentomino(board,z,(i,j))
+                    return (z,(i,j))
 
 def add_pentomino(board, pent, coord):
     """
     Adds a pentomino pent to the board. The pentomino will be placed such that
-    coord[0] is the lowest row index of the pent and coord[1] is the lowest 
-    column index. 
+    coord[0] is the lowest row index of the pent and coord[1] is the lowest
+    column index.
     """
     for row in range(len(pent)):
         for col in range(len(pent[0])):
             if pent[row][col] != 0:
-                if coord[0]+row >= board.shape[0] or coord[1]+col >= board.shape[1]:
-                    remove_pentomino(board, get_pent_idx(pent))
-                    return False
-                if board[coord[0]+row][coord[1]+col] != 0:  # Overlap
-                    remove_pentomino(board, get_pent_idx(pent))
-                    return False
-                else:
-                    board[coord[0]+row][coord[1]+col] = pent[row][col]
+                board[coord[0]+row][coord[1]+col] = pent[row][col]
     return True
 
 
-def remove_pentomino(board, pent_idx):
-    board[board == pent_idx+1] = 0
+def allOrients(pent):
+    seen = []
+    ret = []
+    for flip in range(2):
+        for rotate in range(4):
+            if pent.tolist() not in seen:
+                seen.append(pent.tolist())
+                ret.append(pent)
+            pent = np.rot90(pent)
+        pent = np.flip(pent,1)
+    return ret
+
+def allPositions(board,pent):
+    positions = []
+    for i in range(board.shape[0]):
+        for j in range(board.shape[1]):
+            orient = allOrients(pent)
+            for z in orient:
+                if(can_add_pentomino(board,z,(i,j))):
+                    board_copy = np.copy(board)
+                    add_pentomino(board_copy,z,(i,j))
+                    board_copy[board_copy>0] =1
+                    positions.append(np.reshape(board_copy,board.shape[0]*board.shape[1]))
+    return positions
 
 
-def find_next(board):
-    for y in range(board.shape[0]):
-        for x in range(board.shape[1]):
-            if board[y][x] == 0:
-                return (y, x)
-    return False
-
-
-def check_if_filled(board, pent, coor):
-    add_pentomino(board, pent, coor)
-    if board[coor[0]][coor[1]] != 0:
-        remove_pentomino(board, get_pent_idx(pent))
-        return True
+def exact_cover(A,depth):
+    # If matrix has no columns, terminate successfully.
+    depth+=1
+    if A.shape[1] == 1:
+        print("*****")
+        sol = []
+        sol.append("*")
+        return sol
     else:
-        remove_pentomino(board, get_pent_idx(pent))
-        return False
+        # Choose a column c with the fewest 1s.
+        #c = A.sum(axis=0)
+        vals = np.count_nonzero(A,axis=0)
+        c = vals.argmin()
+        if(np.sum(A[:,c], axis=0)==0):
+            return [":("]
 
+        # For each row r such that A[r,c] = 1,
+        r = []
+        for L in range(A.shape[0]):
+            if(A[L][c]>0):
+                r.append(A[L])
+        for r in r:
+            # For each column j such that A[r,j] = 1,
+            B = A
+            cols = []
+            rows = []
+            for i in range(len(r)):
+                if(i==len(r)-1):
+                    continue
+                if r[i]> 0:
+                    cols.append(i)
+            if(cols):
+                for j in cols:
+                    # Delete each row i such that A[i,j] = 1
+                    for x in range(A[:,j].shape[0]):
+                        if(A[x][j]>0):
+                            rows.append(x)
+                    #B = np.delete(B, list, 0)
+                    # then delete column j.
+                    #if(B.shape[0]>0):
+                        #B = np.delete(B, B[j],1)
+            B = np.delete(B,rows,0)
+            B = np.delete(B,cols,1)
+            sol = exact_cover(B,depth)
+            if(sol[0]=="*"):
+                sol.append(r)
+                return sol
+    return [":("]
 
-def removePent(pents, pent):
-    p = []
-    for pt in pents:
-        if get_pent_idx(pt) != get_pent_idx(pent):
-            p.append(pt)
-    return p
-
-
-
-
-import time
-solution = []
-inVal= None
-count = 0
-
-def removePentFromSolution(pent):
-    global solution
-    p = []
-    for pt in solution:
-        if get_pent_idx(pt[0]) != get_pent_idx(pent):
-            p.append(pt)
-    solution = p
-    return
-
-
-def boardSolve(board, pents):
-    global count
-    count += 1
-    global solution
-    tried = []
-    
-    if (count%5000) == 0:
-        print(board)
- 
-    coor = find_next(board)
-    if len(pents) == 0 or coor == False:
-        print("DONE")
-        inVal = input("->")
-        return True
-    else:
-        for pent in pents:
-            p = pent
-            for rotate in range(0, 4):
-                if can_add_pentomino(board, p, coor) and check_if_filled(board, p, coor) and (p.tolist(), coor) not in tried:
-                    tried.append((p.tolist(), coor))
-                    add_pentomino(board, p, coor)
-                    pents = removePent(pents, p)
-                    solution.append((p, coor))
-
-                    # inVal = input("->")
-
-                    if boardSolve(board, pents):
-                        return True
-
-                    # print(board)
-                    # print(tried)
-                    # inVal = input("->")
-
-                    remove_pentomino(board, get_pent_idx(p))
-                    pents.append(p)
-                    removePentFromSolution(p)
-
-                p = np.rot90(p)
-            p = np.flip(p, 1)
-            for rotate in range(0, 4):
-                if can_add_pentomino(board, p, coor) and check_if_filled(board, p, coor) and (p.tolist(), coor) not in tried:
-                    tried.append((p.tolist(), coor))
-                    add_pentomino(board, p, coor)
-                    pents = removePent(pents, p)
-                    solution.append((p, coor))
-
-                    # inVal = input("->")
-
-                    if boardSolve(board, pents):
-                        return True
-                    
-                    # print(board)
-                    # print(tried)
-                    # inVal = input("->")
-
-                    remove_pentomino(board, get_pent_idx(p))
-                    pents.append(p)
-                    removePentFromSolution(p)
-
-                p = np.rot90(p)
-
-    return False
 
 def solve(board, pents):
-    board = board - 1
-    boardSolve(board, pents)
-    global solution
-    print(board)
-    return solution
-
-
-
-
-
-
-def solveOG(board, pents):
-    count = 0           # Used to prevent infinte looping
-    board = board-1     # flip board to 0s and -1s
-    usedPents = []      # keep track of all pents used, if all used board is solved
-    currStack = []      # stack of pent being tested
-    stack = []          # stack of the entire board
-    sol = []            # keeps track of the current nodes
-    coor = (0, 0)       # keeps track of (y,x) location on board
-    inProgress = True   # break loop when done
-
-    # 1. INITIALIZE STACK
-    # - Initialize stack, starting at coord (y=0, x=0)
-    # - Go through all coordinates on the board
-    # - Try all possible pents that can fill the coordinate
-    # - Combinations include roations and reflections
-    for pent in pents:
-        p = pent
-        for rotate in range(0, 4):
-            if can_add_pentomino(board, p, coor) and check_if_filled(board, p, coor) and (p.tolist(), coor) not in stack:
-                stack.append((p.tolist(), coor))
-            p = np.rot90(p)
-        p = np.flip(p, 1)
-        for rotate in range(0, 4):
-            if can_add_pentomino(board, p, coor) and check_if_filled(board, p, coor) and (p.tolist(), coor) not in stack:
-                stack.append((p.tolist(), coor))
-            p = np.rot90(p)
-
-    # 2. Start Loop
-    # - Pop off block off stack and add to Current Solution (sol)
-    # - Add current solution to the board and used pents
-    # - Find next empty coordinate and find pents
-    while count < 10  and inProgress:
-        curr = stack.pop()
-
-        if get_pent_idx(curr[0]) in usedPents:
-            continue
-
-        sol.append(curr)
-        add_pentomino(board, curr[0], curr[1])
-        usedPents.append(get_pent_idx(curr[0]))
-        coor = find_next(board)
-
-        if len(sol) == len(pents):
-            print("HIT CHECK")
-            break
-        #     if check_correctness(sol, board, pents):
-        #         inProgress = False
-        #         break
-
-        # if count == 29:
-        #     print(board)
-        #     print(usedPents)
-        #     print(curr[1])
-            # for block in stack:
-            #     print(block[1])
-            #     print(np.array(block[0]))
-
-        # 3. Find Pents
-        # - Repeat steps as in the initialize stack step
-        for pent in pents:
-            if get_pent_idx(pent) not in usedPents:
-                p = pent
-                for rotate in range(0, 4):
-                    if can_add_pentomino(board, p, coor) and check_if_filled(board, p, coor) and (p.tolist(), coor) not in currStack:
-                        currStack.append((p.tolist(), coor))
-                    p = np.rot90(p)
-                p = np.flip(p, 1)
-                for rotate in range(0, 4):
-                    if can_add_pentomino(board, p, coor) and check_if_filled(board, p, coor) and (p.tolist(), coor) not in currStack:
-                        currStack.append((p.tolist(), coor))
-                    p = np.rot90(p)
-        # 4. Add to Stack/Backtrack
-        # - Append additional pent options to stack
-        # - If no options, backtrack
-        if currStack:
-            stack += currStack
-            currStack = []
-        else:
-            remove_pentomino(board, get_pent_idx(curr[0]))
-            usedPents.remove(get_pent_idx(curr[0]))
-
-            # 5. Remove Solution
-            # - Remove curr pent from solution
-            # - If removed solution's coordinate is different from the coordinate of the next solution
-            #   then all possible pents for that solution stack have been tried, so remove pent
-            #   and try the next pent on the stack
-            popSol = sol.pop()
-            
-            if len(stack)-1 >= 0 and popSol[1] != stack[len(stack)-1][1]:
-                removeSol = sol.pop()
-                # print(np.array(removeSol[0]))
-                remove_pentomino(board, get_pent_idx(removeSol[0]))
-                usedPents.remove(get_pent_idx(removeSol[0]))
-
-        count += 1
-
-    print(board)
-    # print(usedPents)
-    new_list = [x+1 for x in usedPents]
-    print(new_list)
-    print(curr[1])
-    # for block in stack:
-    #     print(block[1])
-    #     print(np.array(block[0]))
-
-    retSol = []
-    for block in sol:
-        retSol.append((np.array(block[0]), block[1]))
-
-    return retSol
-    # raise NotImplementedError
-
-def check_correctness(sol_list, board, pents):
-    """
-    Sol is a list of pentominos (possibly rotated) and their upper left coordinate
-    """
-    # All tiles used
-    if len(sol_list) != len(pents):
-        return False
-    # Construct board
-    sol_board = np.zeros(board.shape)
-    seen_pents = [0]*len(pents)
-    for pent, coord in sol_list:
-        pidx = get_pent_idx(pent)
-        if seen_pents[pidx] != 0:
-            return False
-        else:
-            seen_pents[pidx] = 1
-        if not add_pentomino(sol_board, pent, coord):
-            return False
-
-    # Check same number of squares occupied
-    if np.count_nonzero(board) != np.count_nonzero(sol_board):
-        return False
-    # Check overlap
-    if np.count_nonzero(board) != np.count_nonzero(np.multiply(board, sol_board)):
-        return False
-
-    return True
-
     """
     This is the function you will implement. It will take in a numpy array of the board
     as well as a list of n tiles in the form of numpy arrays. The solution returned
@@ -328,3 +154,39 @@ def check_correctness(sol_list, board, pents):
     
     -You can assume there will always be a solution.
     """
+    board = board-1
+    flat_board = np.reshape(board,board.shape[0]*board.shape[1])
+    rows = []
+    size = board.shape[0]*board.shape[1]
+    count =0
+    for i, P in enumerate(pents):
+        for A in allPositions(board,P):
+            A = np.append(A, np.zeros(len(pents)+1, dtype='int'))
+            A[size + i] = i+2
+            A[size+len(pents)] = count
+            count+=1
+            rows.append(list(A))
+    mat = np.array(rows, dtype="int")
+    answer = exact_cover(mat,0)
+    del answer[0]
+    for i in range(len(answer)):
+        pent=0
+        for j in range(len(answer[i])):
+            if(j==len(answer[i])-1):
+                num = answer[i][j]
+                gg = rows[num]
+                for wow in range(size):
+                    if(gg[wow]==1):
+                        flat_board[wow] = pent
+            else:
+                if(answer[i][j]>1):
+                    pent = answer[i][j]-1
+    sol = np.reshape(flat_board,(board.shape[0],board.shape[1]))
+    sol = np.array(sol,dtype=int)
+    print(sol)
+    listy = sol_list(sol,pents)
+    print(listy)
+    new_board = np.zeros(board.shape)
+    return listy
+    #covers = np.array(list(exact_cover(A,sol)), dtype='int')
+    #np.savetxt('exact-covers.csv', covers, delimiter=',', fmt='%d')
