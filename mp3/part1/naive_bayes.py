@@ -95,6 +95,7 @@ class NaiveBayes(object):
                 accuracy += 1
 
         accuracy = accuracy/test_label.size
+        print(accuracy)
 
         return accuracy, pred_label
 
