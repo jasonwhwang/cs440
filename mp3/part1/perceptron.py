@@ -49,31 +49,12 @@ class MultiClassPerceptron(object):
                 for aClass in range(0, self.w.shape[1]):
                     allSums[aClass] = np.dot(trainExample, self.w[:,aClass])
                 prediction = np.argmax(allSums)
-                # print(allSums)
-                # print(np.argmax(allSums))
-                # print(actualClass)
-                # input("-->")
 
                 # if misclassified, update weights
                 if prediction != actualClass:
                     # update both the true class and misclassified class
                     self.w[:,actualClass] += learnRate * trainExample
                     self.w[:,prediction] -= learnRate * trainExample
-
-        # correct = 0
-        # for example in range(0, train_set.shape[0]):
-        #     trainExample = train_set[example]
-        #     trainExample = np.append(trainExample, bias)
-        #     actualClass = train_label[example]
-        #     for aClass in range(0, self.w.shape[1]):
-        #         allSums[aClass] = np.dot(trainExample, self.w[:,aClass])
-        #     prediction = np.argmax(allSums)
-
-        #     if prediction == actualClass:
-        #         correct += 1
-
-        # print(correct/train_label.size)
-        # input("-->")
 
     def test(self, test_set, test_label):
         """ Test the trained perceptron model (self.w) using testing dataset. 
@@ -101,10 +82,6 @@ class MultiClassPerceptron(object):
             actualClass = test_label[example]
             for aClass in range(0, self.w.shape[1]):
                 allSums[aClass] = np.dot(testExample, self.w[:,aClass])
-            # print(allSums)
-            # print(np.argmax(allSums))
-            # print(actualClass)
-            # input("-->")
             pred_label[example] = np.argmax(allSums)
             
             if pred_label[example] == actualClass:

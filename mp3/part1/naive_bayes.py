@@ -47,7 +47,7 @@ class NaiveBayes(object):
         # train_set = 50000 * 784; 5000 examples for each class
         # train_label = 50000
 
-        laplace = 0.5
+        laplace = 0.1
         laplaceD = laplace*self.num_value
 
         for i in range(0, train_label.size):

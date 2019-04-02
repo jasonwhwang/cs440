@@ -94,6 +94,7 @@ class TextClassifier(object):
         for example in range(0, len(dev_label)):
             predVal=[]
             for textClass in range(0, len(self.prior)):
+                # val=0
                 val=self.prior[textClass]
                 for word in x_set[example]:
                     if word in self.likelihood[textClass]:
