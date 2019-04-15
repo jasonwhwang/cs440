@@ -34,6 +34,37 @@ class Agent:
         self.s = None
         self.a = None
 
+    def initialize_state_space(self, state):
+        # Simplify State
+        stateEnv = [state[0]//40, state[1]//40, state[2], state[3]//40, state[4]//40]
+        
+        ### INITIALIZE STATE SPACE ###
+        stateSpace = np.zeros(8)
+        # adjoining_wall_x
+        stateSpace[0] = 1 if (stateEnv[0]==1) else 2 if (stateEnv[0]==13) else 0
+        # adjoining_wall_y
+        stateSpace[1] = 1 if (stateEnv[1]==1) else 2 if (stateEnv[1]==13) else 0
+        # food_dir_x
+        food_dir_x = stateEnv[0] - stateEnv[3]
+        stateSpace[2] = 1 if (food_dir_x>0) else 2 if (food_dir_x<0) else 0
+        # food_dir_y
+        food_dir_y = stateEnv[1] - stateEnv[4]
+        stateSpace[3] = 1 if (food_dir_y>0) else 2 if (food_dir_y<0) else 0
+        # adjoining_body_top
+        adjoining_body_top = (state[0], state[1]-40)
+        stateSpace[4] = 1 if adjoining_body_top in state[2] else 0
+        # adjoining_body_bottom
+        adjoining_body_bottom = (state[0], state[1]+40)
+        stateSpace[5] = 1 if adjoining_body_bottom in state[2] else 0
+        # adjoining_body_left
+        adjoining_body_left = (state[0]-40, state[1])
+        stateSpace[6] = 1 if adjoining_body_left in state[2] else 0
+        # adjoining_body_right
+        adjoining_body_right = (state[0]+40, state[1])
+        stateSpace[7] = 1 if adjoining_body_right in state[2] else 0
+
+        return stateSpace
+
     def act(self, state, points, dead):
         '''
         :param state: a list of [snake_head_x, snake_head_y, snake_body, food_x, food_y] from environment.
@@ -47,5 +78,31 @@ class Agent:
         (Note that [adjoining_wall_x=0, adjoining_wall_y=0] is also the case when snake runs out of the 480x480 board)
 
         '''
+        ### GAME VALUES ###
+        # Board: 1 <= x and y <= 12; drawn from top-left to bottom-right
+        # Border: x or y == 0 || 13
+        # State Env: [snake_head_x, snake_head_y, snake_body, food_x, food_y]
+        # Snake Body: stored as tuples
+        # State Space: (adjoining_wall_x, adjoining_wall_y, food_dir_x, food_dir_y, adjoining_body_top,
+        #               adjoining_body_bottom, adjoining_body_left, adjoining_body_right)
+        
+        # Simplify State
+        stateEnv = [state[0]//40, state[1]//40, state[2], state[3]//40, state[4]//40]
+        # Initialize State Space
+        stateSpace = self.initialize_state_space(state)
+
+        print(stateEnv)
+        print(stateSpace)
+        input("-->")
+
+        # Mock Snake Movements
+        if stateSpace[3] == 1:
+            return self.actions[0]
+        if stateSpace[3] == 2:
+            return self.actions[1]
+        if stateSpace[2] == 1:
+            return self.actions[2]
+        if stateSpace[2] == 2:
+            return self.actions[3]
 
         return self.actions[0]
