@@ -42,7 +42,7 @@ class Agent:
 
     def get_state_space(self, stateEnv):
         # Initialize Array
-        stateSpace = np.zeros(8, dtype=int)
+        stateSpace = [0,0,0,0,0,0,0,0]
         # adjoining_wall_x
         stateSpace[0] = 1 if (stateEnv[0]==1) else 2 if (stateEnv[0]==13) else 0
         # adjoining_wall_y
@@ -73,6 +73,37 @@ class Agent:
             3], stateSpace[4], stateSpace[5], stateSpace[6], stateSpace[7]
         return self.Q[q0, q1, q2, q3, q4, q5, q6, q7, action], self.N[q0, q1, q2, q3, q4, q5, q6, q7, action]
 
+    def get_reward(self, points, dead):
+        if dead:
+            return -1
+        if points > self.points:
+            return 1
+        return -0.1
+
+    def get_max_Q(self, stateSpace):
+        maxQ = 0.0
+        for i in range(len(self.actions)):
+            q, n = self.get_q_and_n(stateSpace, i)
+            if q > maxQ:
+                maxQ = q
+        return maxQ
+
+    def update_Q_table(self, points, dead, stateSpace):
+        if self.s == None or self.a == None:
+            return
+        
+        pastQ, pastN = self.get_q_and_n(self.s, self.a)
+        learn_rate = self.C/(self.C + pastN)
+        reward = self.get_reward(points, dead)
+        maxQ = self.get_max_Q(stateSpace)
+
+        q0, q1, q2, q3, q4, q5, q6, q7 = self.s[0], self.s[1], self.s[2], self.s[
+            3], self.s[4], self.s[5], self.s[6], self.s[7]
+
+        self.Q[q0, q1, q2, q3, q4, q5, q6, q7, self.a] = pastQ + learn_rate * (reward + self.gamma*maxQ - pastQ)
+
+        return
+    
     def get_action(self, stateSpace):
         action, score = 0, 0.0
         # For all actions (up=0, down=1, left=2, right=3)
@@ -80,6 +111,7 @@ class Agent:
             scoreTemp = 0.0
             # Get Quality and n of each action
             u, n = self.get_q_and_n(stateSpace, i)
+
             # Calculate exploration function
             if n < self.Ne:
                 scoreTemp = self.Rplus
@@ -91,16 +123,18 @@ class Agent:
             if scoreTemp >= score:
                 action = i
                 score = scoreTemp
-                
+
         return action
 
-    def get_reward(self, stateSpace):
-        return 1
-
     def update_N_table(self, stateSpace, action):
+        q0, q1, q2, q3, q4, q5, q6, q7 = stateSpace[0], stateSpace[1], stateSpace[2], stateSpace[
+            3], stateSpace[4], stateSpace[5], stateSpace[6], stateSpace[7]
+        self.N[q0, q1, q2, q3, q4, q5, q6, q7, action] += 1
         return
 
-    def update_Q_table(self):
+    def save_s_a(self, stateSpace, action):
+        self.s = stateSpace.copy()
+        self.a = action
         return
 
     def act(self, state, points, dead):
@@ -108,18 +142,27 @@ class Agent:
         stateEnv = [state[0]//40, state[1]//40, state[2], state[3]//40, state[4]//40]
         # Get State Space
         stateSpace = self.get_state_space(stateEnv)
-        print(stateEnv)
-        print(stateSpace)
 
         # Q-Learning Algorithm
-        # 1. Choose Action
-        action = self.get_action(stateSpace)
-        # 2. Update N-Table
-        self.update_N_table(stateSpace, action)
-        # 3. Update Q-Table
-        self.update_Q_table()
+        # 1. Update Q-Table
+        self.update_Q_table(points, dead, stateSpace)
 
-        input("-->")
+        # Check if Dead
+        if dead:
+            self.reset()
+            return self.actions[0]
+
+        # 2. Choose Action
+        action = self.get_action(stateSpace)
+        # 3. Update N-Table
+        self.update_N_table(stateSpace, action)
+        
+        # Save Past State & Action
+        self.save_s_a(stateSpace, action)
+
+        # print(stateEnv)
+        # print(stateSpace)
+        # input("-->")
 
         return self.actions[action]
 
