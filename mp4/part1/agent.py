@@ -7,13 +7,13 @@ class Agent:
     
     def __init__(self, actions, Ne, C, gamma):
         self.actions = actions
-        self.Ne = Ne # used in exploration function
-        self.C = C
-        self.gamma = gamma
+        self.Ne = float(Ne) # used in exploration function
+        self.C = float(C)
+        self.gamma = float(gamma)
 
         # Defaults
-        self.Rplus = 1
-        self.points = 0
+        self.Rplus = 1.0
+        self.points = 0.0
         self.s = None
         self.a = None
 
@@ -36,35 +36,68 @@ class Agent:
         self.Q = utils.load(model_path)
 
     def reset(self):
-        self.points = 0
+        self.points = 0.0
         self.s = None
         self.a = None
 
     def get_state_space(self, stateEnv):
+        # State Env: [snake_head_x, snake_head_y, snake_body, food_x, food_y]
         # Initialize Array
         stateSpace = [0,0,0,0,0,0,0,0]
         # adjoining_wall_x
-        stateSpace[0] = 1 if (stateEnv[0]==1) else 2 if (stateEnv[0]==13) else 0
+        if stateEnv[0] == 40:
+            stateSpace[0] = 1
+        elif stateEnv[0] == 480:
+            stateSpace[0] = 2
+        else:
+            stateSpace[0] = 0
         # adjoining_wall_y
-        stateSpace[1] = 1 if (stateEnv[1]==1) else 2 if (stateEnv[1]==13) else 0
+        if stateEnv[1] == 40:
+            stateSpace[1] = 1
+        elif stateEnv[1] == 480:
+            stateSpace[1] = 2
+        else:
+            stateSpace[1] = 0
         # food_dir_x
         food_dir_x = stateEnv[0] - stateEnv[3]
-        stateSpace[2] = 1 if (food_dir_x>0) else 2 if (food_dir_x<0) else 0
+        if food_dir_x > 0:
+            stateSpace[2] = 1
+        elif food_dir_x < 0:
+            stateSpace[2] = 2
+        else:
+            stateSpace[2] = 0
         # food_dir_y
         food_dir_y = stateEnv[1] - stateEnv[4]
-        stateSpace[3] = 1 if (food_dir_y>0) else 2 if (food_dir_y<0) else 0
+        if food_dir_y > 0:
+            stateSpace[3] = 1
+        elif food_dir_y < 0:
+            stateSpace[3] = 2
+        else:
+            stateSpace[3] = 0
         # adjoining_body_top
-        adjoining_body_top = (stateEnv[0]*40, stateEnv[1]*40-40)
-        stateSpace[4] = 1 if adjoining_body_top in stateEnv[2] else 0
+        adjoining_body_top = (stateEnv[0], stateEnv[1]-40)
+        if adjoining_body_top in stateEnv[2]:
+            stateSpace[4] = 1
+        else:
+            stateSpace[4] = 0
         # adjoining_body_bottom
-        adjoining_body_bottom = (stateEnv[0]*40, stateEnv[1]*40+40)
-        stateSpace[5] = 1 if adjoining_body_bottom in stateEnv[2] else 0
+        adjoining_body_bottom = (stateEnv[0], stateEnv[1]+40)
+        if adjoining_body_bottom in stateEnv[2]:
+            stateSpace[5] = 1
+        else:
+            stateSpace[5] = 0
         # adjoining_body_left
-        adjoining_body_left = (stateEnv[0]*40-40, stateEnv[1]*40)
-        stateSpace[6] = 1 if adjoining_body_left in stateEnv[2] else 0
+        adjoining_body_left = (stateEnv[0]-40, stateEnv[1])
+        if adjoining_body_left in stateEnv[2]:
+            stateSpace[6] = 1
+        else:
+            stateSpace[6] = 0
         # adjoining_body_right
-        adjoining_body_right = (stateEnv[0]*40+40, stateEnv[1]*40)
-        stateSpace[7] = 1 if adjoining_body_right in stateEnv[2] else 0
+        adjoining_body_right = (stateEnv[0]+40, stateEnv[1])
+        if adjoining_body_right in stateEnv[2]:
+            stateSpace[7] = 1
+        else:
+            stateSpace[7] = 0
 
         return stateSpace
 
@@ -75,9 +108,9 @@ class Agent:
 
     def get_reward(self, points, dead):
         if dead:
-            return -1
+            return -1.0
         if points > self.points:
-            return 1
+            return 1.0
         return -0.1
 
     def get_max_Q(self, stateSpace):
@@ -89,7 +122,7 @@ class Agent:
         return maxQ
 
     def update_Q_table(self, points, dead, stateSpace):
-        if self.s == None or self.a == None:
+        if self.s is None and self.a is None or self._train is False:
             return
         
         pastQ, pastN = self.get_q_and_n(self.s, self.a)
@@ -104,8 +137,8 @@ class Agent:
 
         return
     
-    def get_action(self, stateSpace):
-        action, score = 0, 0.0
+    def get_action_train(self, stateSpace):
+        action, score = 0, -999.999
         # For all actions (up=0, down=1, left=2, right=3)
         for i in range(len(self.actions)):
             scoreTemp = 0.0
@@ -123,25 +156,47 @@ class Agent:
             if scoreTemp >= score:
                 action = i
                 score = scoreTemp
-
+        
         return action
 
+    def get_action_test(self, stateSpace):
+        q0, q1, q2, q3, q4, q5, q6, q7 = stateSpace[0], stateSpace[1], stateSpace[2], stateSpace[
+            3], stateSpace[4], stateSpace[5], stateSpace[6], stateSpace[7]
+        actionList = self.Q[q0, q1, q2, q3, q4, q5, q6, q7]
+        maxScore = -999.999
+        action = 0
+        for i in range(len(self.actions)):
+            if actionList[i] >= maxScore:
+                action = i
+                maxScore = actionList[i]
+        return action
+    
+    def get_action(self, stateSpace):
+        if self._train is True:
+            return self.get_action_train(stateSpace)
+        return self.get_action_test(stateSpace)
+
     def update_N_table(self, stateSpace, action):
+        if self._train is False:
+            return
+
         q0, q1, q2, q3, q4, q5, q6, q7 = stateSpace[0], stateSpace[1], stateSpace[2], stateSpace[
             3], stateSpace[4], stateSpace[5], stateSpace[6], stateSpace[7]
         self.N[q0, q1, q2, q3, q4, q5, q6, q7, action] += 1
         return
 
-    def save_s_a(self, stateSpace, action):
+    def save_p_s_a(self, points, stateSpace, action):
+        if self._train is False:
+            return
+
+        self.points = points
         self.s = stateSpace.copy()
         self.a = action
         return
 
     def act(self, state, points, dead):
-        # Get ENV State
-        stateEnv = [state[0]//40, state[1]//40, state[2], state[3]//40, state[4]//40]
         # Get State Space
-        stateSpace = self.get_state_space(stateEnv)
+        stateSpace = self.get_state_space(state)
 
         # Q-Learning Algorithm
         # 1. Update Q-Table
@@ -150,7 +205,7 @@ class Agent:
         # Check if Dead
         if dead:
             self.reset()
-            return self.actions[0]
+            return None
 
         # 2. Choose Action
         action = self.get_action(stateSpace)
@@ -158,7 +213,7 @@ class Agent:
         self.update_N_table(stateSpace, action)
         
         # Save Past State & Action
-        self.save_s_a(stateSpace, action)
+        self.save_p_s_a(points, stateSpace, action)
 
         # print(stateEnv)
         # print(stateSpace)
