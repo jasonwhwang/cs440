@@ -40,9 +40,10 @@ class Agent:
         self.s = None
         self.a = None
 
-    def get_state_space(self, stateEnv):
+    def get_state_space(self, state):
         # State Env: [snake_head_x, snake_head_y, snake_body, food_x, food_y]
         # Initialize Array
+        stateEnv = np.copy(state)
         stateSpace = [0,0,0,0,0,0,0,0]
         # adjoining_wall_x
         if stateEnv[0] == 40:
@@ -114,7 +115,7 @@ class Agent:
         return -0.1
 
     def get_max_Q(self, stateSpace):
-        maxQ = 0.0
+        maxQ = -np.inf
         for i in range(len(self.actions)):
             q, n = self.get_q_and_n(stateSpace, i)
             if q > maxQ:
@@ -138,7 +139,7 @@ class Agent:
         return
     
     def get_action_train(self, stateSpace):
-        action, score = 0, -999.999
+        action, score = 0, -np.inf
         # For all actions (up=0, down=1, left=2, right=3)
         for i in range(len(self.actions)):
             scoreTemp = 0.0
@@ -163,7 +164,7 @@ class Agent:
         q0, q1, q2, q3, q4, q5, q6, q7 = stateSpace[0], stateSpace[1], stateSpace[2], stateSpace[
             3], stateSpace[4], stateSpace[5], stateSpace[6], stateSpace[7]
         actionList = self.Q[q0, q1, q2, q3, q4, q5, q6, q7]
-        maxScore = -999.999
+        maxScore = -np.inf
         action = 0
         for i in range(len(self.actions)):
             if actionList[i] >= maxScore:
@@ -186,9 +187,6 @@ class Agent:
         return
 
     def save_p_s_a(self, points, stateSpace, action):
-        if self._train is False:
-            return
-
         self.points = points
         self.s = stateSpace.copy()
         self.a = action
@@ -219,7 +217,7 @@ class Agent:
         # print(stateSpace)
         # input("-->")
 
-        return self.actions[action]
+        return self.a
 
 
         '''

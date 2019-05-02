@@ -16,3 +16,9 @@ Part 1: Fashion Image Classification
 Given a set of images of cloes, train a naive bayes model and a perceptron model to predict the correct class label given an unseen image.
 Part 2: Text Classification
 Given a text dataset, train a naive bayes unigram model (bag of words) to predict the right class label given an unseen text.
+
+MP4: Reinforcement Learning and Deep Learning
+Part 1: Q-Learning with Snake
+Using Q-Learning, I was able to train the snake in the game to eat the food and grow as large as it could.
+Part 2: Deep Learning
+In this part, I trained a fully connected, 4-layer neural network from scratch. This network used forward propagation, back propagation, rectified linear units, minibatch gradient descent, and other deep learning methods to form this deep learnin neural network.
